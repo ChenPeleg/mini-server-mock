@@ -7,6 +7,18 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { buildController } from './controller.js';
 
 class MainServer {
+    /**
+     * @typedef {Object} MainServerOptions
+     * @param root
+     * @param port
+     * @param staticFolder
+     * @param apiController
+     */
+
+    /**
+     *
+     * @param {{root? : string, port? : number, staticFolder? : string, apiController? : any}} MainServerOptions
+     */
     constructor({ root, port, staticFolder, apiController } = {}) {
         this.staticFolder = staticFolder || 'public';
         this.root = root || process.cwd();
@@ -136,6 +148,10 @@ export class ApiController {
         }
     }
 
+    /**
+     * @param {string} path
+     * @param {{ url: string; }} request
+     */
     static isRouteMatch(path, request) {
         const pathParts = path.split('/');
         const requestParts = request.url.split('/');
@@ -150,6 +166,10 @@ export class ApiController {
         });
     }
 
+    /**
+     * @param {string} path
+     * @param {{ url: string; }} request
+     */
     static getVariablesFromPath(path, request) {
         const requestWithoutQuery = request.url.split('?')[0];
         const pathParts = path.split('/');
@@ -157,6 +177,7 @@ export class ApiController {
         const variables = {};
         pathParts.forEach((part, i) => {
             if (part.startsWith(':')) {
+                // @ts-ignore
                 variables[part.substring(1)] = requestParts[i];
             }
         });
@@ -194,6 +215,7 @@ export class ApiController {
         return { handled: true };
     }
 
+    // @ts-ignore
     addRoute({ route, routeAction }) {
         this.routes.push({ route, routeAction });
         return this;
