@@ -265,6 +265,26 @@ export class ApiController {
     }
 
     /**
+     *
+     * @param {{url : string, method? : RouteMethod, data : any, status? : number}} args
+     * @param method
+     * @param data
+     * @param status
+     * @return {ApiControllerRoute}
+     */
+    static createRoute({url, method, data, status }) {
+        return {
+            url,
+            method: method || 'GET',
+            routeAction: (req, res) => {
+                res.writeHead(status || 200, { 'Content-Type': 'application/json' });
+                res.write(JSON.stringify(data || {}));
+                res.end();
+            },
+        };
+    }
+
+    /**
      * Handles a request and delegates to the correct route.
      * @param {import('http').IncomingMessage} request
      * @param {import('http').ServerResponse} response
