@@ -120,7 +120,17 @@ export class MiniServer {
                 return;
             }
             console.error(`File not found: ${filename}`);
-            filename = joinPath(process.cwd(), `${this.staticFolder}/404.html`);
+            if (request.headers['content-type'] === 'application/json') {
+                response.writeHead(404, { 'Content-Type': 'text/plain' });
+                response.write('Not found');
+                response.end();
+                return;
+
+
+            } else {
+                filename = joinPath(process.cwd(), `${this.staticFolder}/404.html`);
+            }
+
         } else if (statSync(filename).isDirectory()) {
             filename += '/index.html';
         }
