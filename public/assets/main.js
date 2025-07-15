@@ -66,6 +66,11 @@ class Main {
     buildCalls() {
         return [
             new ApiCall({
+                path: '/api/jsonTry',
+                method: 'GET',
+                name: 'Json response',
+            }),
+            new ApiCall({
                 path: '/api/first',
                 method: 'GET',
                 name: 'First',
