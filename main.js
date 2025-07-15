@@ -7,5 +7,6 @@ const server = new MiniServer({
     port: 4200,
     staticFolder: 'public',
     apiController: buildController(),
+    devHotReload: true,
 });
 server.start();

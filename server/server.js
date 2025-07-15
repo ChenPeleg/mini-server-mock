@@ -11,7 +11,7 @@ export class MiniServer {
      * @property {string} [root]
      * @property {number} [port]
      * @property {string} [staticFolder]
-     * @property {boolean} [hasHotReload]
+     * @property {boolean} [devHotReload]
      * @property { ApiController} [apiController]
      */
 
@@ -23,19 +23,21 @@ export class MiniServer {
         port,
         staticFolder,
         apiController,
-        hasHotReload,
+        devHotReload,
     } = {}) {
         this.staticFolder = staticFolder || 'public';
         this.root = root || process.cwd();
         this.port = port || 4200;
         this.apiConteoller = apiController;
         this.hotRelaodfile = `hot-reload-${Math.random().toString(36).substring(6)}.js`;
+        this.devHotReload = devHotReload || false;
     }
 
     /**
      * @returns {string}
      */
     get htmlHotReloadWorker() {
+
         return `onconnect = (e) => {
     const port = e.ports[0];
     const evtSource = new EventSource('http://localhost:35729');
@@ -97,7 +99,7 @@ export class MiniServer {
             response.end();
             return;
         }
-        if (url.replace('/', '') === this.hotRelaodfile) {
+        if (this.devHotReload && url.replace('/', '') === this.hotRelaodfile) {
             response.writeHead(200, { 'Content-Type': 'text/javascript' });
             response.write(this.htmlHotReloadWorker, 'binary');
             response.end();
@@ -126,7 +128,7 @@ export class MiniServer {
 
         try {
             let file = readFileSync(filename, 'binary');
-            if (filename.endsWith('.html')) {
+            if (filename.endsWith('.html') && this.devHotReload) {
                 file = file.replace(
                     '</head>',
                     `${this.htmlHotReloadScript}</head>`
