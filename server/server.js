@@ -12,7 +12,7 @@ class MiniServer {
      * @property {string} [root]
      * @property {number} [port]
      * @property {string} [staticFolder]
-     * @property {ApiController} [apiController]
+     * @property { ApiController} [apiController]
      */
 
     /**
@@ -174,7 +174,6 @@ class MiniServer {
 
 export class ApiController {
     static stateSaveFileName = './server.state.temp';
-
     /**
      * @param {{initialState?: any, persistState?: boolean }} args
      */
