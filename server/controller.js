@@ -8,7 +8,13 @@ export const buildController = () => {
     });
     controller
         .addRoute({
-            route: '/api/first',
+            route: '/api/first'
+           ,
+            /**
+             *
+             * @param {Request} req
+             * @param {Response} res
+             */
             routeAction: (req, res) => {
                 controller.state.count = controller.state.count + 1;
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
