@@ -37,7 +37,6 @@ export class MiniServer {
      * @returns {string}
      */
     get htmlHotReloadWorker() {
-
         return `onconnect = (e) => {
     const port = e.ports[0];
     const evtSource = new EventSource('http://localhost:35729');
@@ -197,13 +196,13 @@ export class ApiController {
     #stateSaveFileName = './server.state.temp';
 
     /**
-     * @param {{initialState?: any, persistState?: boolean,stateSaveFile? : string  }} args
+     * @param {{routes? :ApiControllerRoute[]  , initialState?: any, persistState?: boolean,stateSaveFile? : string  }} args
      */
-    constructor({ initialState, persistState, stateSaveFile } = {}) {
+    constructor({ routes, initialState, persistState, stateSaveFile } = {}) {
         this.persistState = persistState || false;
         this.#stateSaveFileName = stateSaveFile || this.#stateSaveFileName;
         /** @type {ApiControllerRoute[]} */
-        this.routes = [];
+        this.routes = routes || [];
         this.state = initialState || {};
         if (this.persistState) {
             this.tryToLoadState().then();
@@ -255,15 +254,6 @@ export class ApiController {
         return variables;
     }
 
-    async tryToLoadState() {
-        try {
-            const state = await readFile(this.#stateSaveFileName, 'utf8');
-            this.state = JSON.parse(state);
-        } catch (err) {
-            console.log('state not loaded', err);
-        }
-    }
-
     /**
      *
      * @param {{url : string, method? : RouteMethod, data : any, status? : number}} args
@@ -272,16 +262,27 @@ export class ApiController {
      * @param status
      * @return {ApiControllerRoute}
      */
-    static createRoute({url, method, data, status }) {
+    static createRoute({ url, method, data, status }) {
         return {
             url,
             method: method || 'GET',
             routeAction: (req, res) => {
-                res.writeHead(status || 200, { 'Content-Type': 'application/json' });
+                res.writeHead(status || 200, {
+                    'Content-Type': 'application/json',
+                });
                 res.write(JSON.stringify(data || {}));
                 res.end();
             },
         };
+    }
+
+    async tryToLoadState() {
+        try {
+            const state = await readFile(this.#stateSaveFileName, 'utf8');
+            this.state = JSON.parse(state);
+        } catch (err) {
+            console.log('state not loaded', err);
+        }
     }
 
     /**

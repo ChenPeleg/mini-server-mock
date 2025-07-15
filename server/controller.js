@@ -1,6 +1,14 @@
 //@ts-check
 import { ApiController } from './server.js';
 
+
+const baseRoutes = [ApiController.createRoute({
+    url : 'json2',
+    method : 'GET',
+    data : {        abc: 123,},
+    status : 200,
+})]
+
 /**
  * Builds and returns the API controller with all routes.
  * @returns {ApiController}
@@ -13,6 +21,7 @@ export const buildController = () => {
         /** @type {{ count: number }} */
         initialState: { count: 0 },
         /** @type {boolean} */ persistState: true,
+
     });
     controller
         .addRoute({
