@@ -9,15 +9,14 @@ import { buildController } from './controller.js';
 class MainServer {
     /**
      * @typedef {Object} MainServerOptions
-     * @param root
-     * @param port
-     * @param staticFolder
-     * @param apiController
+     * @property {string} [root]
+     * @property {number} [port]
+     * @property {string} [staticFolder]
+     * @property {ApiController} [apiController]
      */
 
     /**
-     *
-     * @param {{root? : string, port? : number, staticFolder? : string, apiController? : any}} MainServerOptions
+     * @param {MainServerOptions} [options]
      */
     constructor({ root, port, staticFolder, apiController } = {}) {
         this.staticFolder = staticFolder || 'public';
@@ -27,6 +26,9 @@ class MainServer {
         this.hotRelaodfile = `hot-reload-${Math.random().toString(36).substring(6)}.js`;
     }
 
+    /**
+     * @returns {string}
+     */
     get htmlHotReloadWorker() {
         return `onconnect = (e) => {
     const port = e.ports[0];
@@ -39,6 +41,9 @@ class MainServer {
 `;
     }
 
+    /**
+     * @returns {string}
+     */
     get htmlHotReloadScript() {
         return `<script>
         const myWorker = new SharedWorker("${this.hotRelaodfile}", {
@@ -53,6 +58,10 @@ class MainServer {
     </script>`;
     }
 
+    /**
+     * Starts the HTTP server.
+     * @returns {void}
+     */
     start() {
         const server = http.createServer(this.serverMainHandler.bind(this));
         // @ts-ignore
@@ -65,8 +74,10 @@ class MainServer {
     }
 
     /**
-     * @param {{ url: string; }} request
-     * @param {{ writeHead: (arg0: number, arg1: { "Content-Type"?: string; }) => void; write: (arg0: string, arg1: string | undefined) => void; end: () => void; }} response
+     * Serves static files or the hot reload worker.
+     * @param {import('http').IncomingMessage & { url: string }} request
+     * @param {import('http').ServerResponse} response
+     * @returns {void}
      */
     staticFileServer(request, response) {
         const basePath = joinPath(this.root, this.staticFolder);
@@ -124,8 +135,10 @@ class MainServer {
     }
 
     /**
-     * @param {any} request
-     * @param {any} response
+     * Handles API calls by delegating to the ApiController.
+     * @param {import('http').IncomingMessage} request
+     * @param {import('http').ServerResponse} response
+     * @returns {any}
      */
     apiCallsServer(request, response) {
         if (!this.apiConteoller) {
@@ -135,8 +148,10 @@ class MainServer {
     }
 
     /**
-     * @param {{ url: string; }} request
-     * @param {{ writeHead: (arg0: number, arg1: { "Content-Type"?: string; }) => void; write: (arg0: string, arg1: string | undefined) => void; end: () => void; }} response
+     * Main server handler for all requests.
+     * @param {import('http').IncomingMessage} request
+     * @param {import('http').ServerResponse} response
+     * @returns {Promise<void>}
      */
     async serverMainHandler(request, response) {
         const result = await this.apiCallsServer(request, response);
@@ -147,15 +162,21 @@ class MainServer {
     }
 }
 
+/**
+ * @typedef {Object} ApiControllerRoute
+ * @property {string} route
+ * @property {(req: import('http').IncomingMessage, res: import('http').ServerResponse) => void} routeAction
+ */
+
 export class ApiController {
     static stateSaveFileName = './server.state.temp';
 
     /**
-     * @param {{initialState? :any , persistState?:any }}   args
+     * @param {{initialState?: any, persistState?: boolean }} args
      */
     constructor({ initialState, persistState } = {}) {
         this.persistState = persistState || false;
-        /** @type {Array<{route: string, routeAction: function}>} */
+        /** @type {ApiControllerRoute[]} */
         this.routes = [];
         this.state = initialState || {};
         if (this.persistState) {

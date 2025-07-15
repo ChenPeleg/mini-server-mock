@@ -1,19 +1,29 @@
 //@ts-check
 import { ApiController } from './server.js';
 
+/**
+ * Builds and returns the API controller with all routes.
+ * @returns {ApiController}
+ */
 export const buildController = () => {
+    /**
+     * @type {ApiController}
+     */
     const controller = new ApiController({
+        /** @type {{ count: number }} */
         initialState: { count: 0 },
+        /** @type {boolean} */
         persistState: true,
     });
     controller
         .addRoute({
-            route: '/api/first'
-           ,
+            /** @type {string} */
+            route: '/api/first',
             /**
-             *
-             * @param {Request} req
-             * @param {Response} res
+             * Handles the /api/first route.
+             * @param {import('http').IncomingMessage} req
+             * @param {import('http').ServerResponse} res
+             * @returns {void}
              */
             routeAction: (req, res) => {
                 controller.state.count = controller.state.count + 1;
@@ -25,16 +35,26 @@ export const buildController = () => {
             },
         })
         .addRoute({
+            /** @type {string} */
             route: '/api/second/:id',
+            /**
+             * Handles the /api/second/:id route.
+             * @param {import('http').IncomingMessage} req
+             * @param {import('http').ServerResponse} res
+             * @returns {void}
+             */
             routeAction: (req, res) => {
-                const { id } = ApiController.getVariablesFromPath(
+                // Defensive: ensure req.url is a string
+                const url = typeof req.url === 'string' ? req.url : '';
+                const vars = ApiController.getVariablesFromPath(
                     '/api/second/:id',
-                    req
+                    { url }
                 );
-                const params = new URLSearchParams(req.url.split('?')[1]);
+                const id = vars.id ?? '';
+                const params = new URLSearchParams(url.split('?')[1] || '');
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.write(
-                    `route ${req.url}  was called with id ${id} and params ${[...params.entries()]}`
+                    `route ${url}  was called with id ${id} and params ${[...params.entries()]}`
                 );
                 res.end();
             },
