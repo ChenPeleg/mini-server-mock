@@ -1,7 +1,6 @@
 //@ts-check
 import { ApiController } from './server.js';
 
-
 const baseRoutes = [ApiController.createRoute({
     url : 'json2',
     method : 'GET',

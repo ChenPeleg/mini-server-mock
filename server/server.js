@@ -120,7 +120,7 @@ export class MiniServer {
                 return;
             }
             console.error(`File not found: ${filename}`);
-            filename = joinPath(process.cwd(), '/404.html');
+            filename = joinPath(process.cwd(), `${this.staticFolder}/404.html`);
         } else if (statSync(filename).isDirectory()) {
             filename += '/index.html';
         }
