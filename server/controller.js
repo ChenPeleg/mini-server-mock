@@ -46,15 +46,16 @@ export const buildController = () => {
             routeAction: (req, res) => {
                 // Defensive: ensure req.url is a string
                 const url = typeof req.url === 'string' ? req.url : '';
+                /** @type {Record<string, string>} */
                 const vars = ApiController.getVariablesFromPath(
                     '/api/second/:id',
                     { url }
                 );
-                const id = vars.id ?? '';
+                const id = vars.id || '';
                 const params = new URLSearchParams(url.split('?')[1] || '');
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.write(
-                    `route ${url}  was called with id ${id} and params ${[...params.entries()]}`
+                    `route ${url}  was called with id ${id} and params ${[...params.entries()]} `
                 );
                 res.end();
             },

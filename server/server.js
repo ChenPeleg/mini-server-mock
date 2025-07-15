@@ -75,14 +75,15 @@ class MainServer {
 
     /**
      * Serves static files or the hot reload worker.
-     * @param {import('http').IncomingMessage & { url: string }} request
+     * @param {import('http').IncomingMessage} request
      * @param {import('http').ServerResponse} response
      * @returns {void}
      */
     staticFileServer(request, response) {
+        const url = typeof request.url === 'string' ? request.url : '';
         const basePath = joinPath(this.root, this.staticFolder);
-        let filename = joinPath(basePath, request.url);
-        if (request.url.replace('/', '') === this.hotRelaodfile) {
+        let filename = joinPath(basePath, url);
+        if (url.replace('/', '') === this.hotRelaodfile) {
             response.writeHead(200, { 'Content-Type': 'text/javascript' });
             response.write(this.htmlHotReloadWorker, 'binary');
             response.end();
@@ -95,6 +96,9 @@ class MainServer {
             '.json': 'text/json',
             '.svg': 'image/svg+xml',
         };
+        // Fix: add index signature to allow string indexing
+        /** @type {Record<string, string>} */
+        const contentTypes = contentTypesByExtension;
         if (!existsSync(filename)) {
             if (filename.includes('api')) {
                 response.writeHead(400, { 'Content-Type': 'text/plain' });
@@ -116,11 +120,10 @@ class MainServer {
                 );
             }
 
+            /** @type {import('http').OutgoingHttpHeaders} */
             const headers = {};
-            // @ts-ignore
-            const contentType = contentTypesByExtension[extname(filename)];
+            const contentType = contentTypes[extname(filename)];
             if (contentType) {
-                // @ts-ignore
                 headers['Content-Type'] = contentType;
             }
             response.writeHead(200, headers);
@@ -144,7 +147,9 @@ class MainServer {
         if (!this.apiConteoller) {
             return;
         }
-        return this.apiConteoller.use(request, response);
+        // Defensive: ensure url is always a string for ApiController
+        const url = typeof request.url === 'string' ? request.url : '';
+        return this.apiConteoller.use({ ...request, url }, response);
     }
 
     /**
@@ -158,6 +163,7 @@ class MainServer {
         if (result && result.handled) {
             return;
         }
+        // Fix: pass original request object, not a spread, to staticFileServer
         this.staticFileServer(request, response);
     }
 }
@@ -232,18 +238,16 @@ export class ApiController {
         }
     }
 
-    /**
-     * @param {{ url: string; }} request
-     * @param {any} response
-     */
+
     use(request, response) {
+        const url = typeof request.url === 'string' ? request.url : '';
         const route = this.routes.find((r) =>
-            ApiController.isRouteMatch(r.route, request)
+            ApiController.isRouteMatch(r.route, { url })
         );
         if (!route) {
             return { handled: false };
         }
-
+        // Always call routeAction with the original IncomingMessage
         route.routeAction(request, response);
         if (this.persistState) {
             writeFile(
