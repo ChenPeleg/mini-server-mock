@@ -45,6 +45,7 @@ class MainServer {
      * @returns {string}
      */
     get htmlHotReloadScript() {
+
         return `<script>
         const myWorker = new SharedWorker("${this.hotRelaodfile}", {
             name: 'reload-worker',
