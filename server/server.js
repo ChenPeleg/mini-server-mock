@@ -165,11 +165,14 @@ class MiniServer {
         this.staticFileServer(request, response);
     }
 }
+/**
+ * @typedef {'GET' | 'PSOT' | 'PUT' | 'PATCH' | 'DELETE'} RouteMethod
+*/
 
 /**
  * @typedef {Object} ApiControllerRoute
- * @property {string} route
- * @property {'GET' | 'PSOT' | 'PUT' | 'PATCH' | 'DELETE'} [method]
+ * @property {string} url
+ * @property {RouteMethod} [method]
  * @property {(req: import('http').IncomingMessage, res: import('http').ServerResponse) => void} routeAction
  */
 
@@ -190,13 +193,17 @@ export class ApiController {
     }
 
     /**
-     * @param {string} path
-     * @param {{ url: string; }} request
+     * @param {Omit<ApiControllerRoute, "routeAction">} route
+     * @param {{ url: string; method: string; }} request
      */
-    static isRouteMatch(path, request) {
-        const pathParts = path.split('/');
+    static isRouteMatch(route, request) {
+        const pathParts = route.url.split('/');
         const requestParts = request.url.split('/');
+
         if (pathParts.length !== requestParts.length) {
+            return false;
+        }
+        if (route.method && route.method !== request.method) {
             return false;
         }
         return pathParts.every((part, i) => {
@@ -247,7 +254,7 @@ export class ApiController {
     use(request, response) {
         const url = typeof request.url === 'string' ? request.url : '';
         const route = this.routes.find((r) =>
-            ApiController.isRouteMatch(r.route, { url })
+            ApiController.isRouteMatch({ url : r.url, method: r.method }, { url, method: request.method })
         );
         if (!route) {
             return { handled: false };
