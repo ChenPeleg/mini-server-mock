@@ -6,7 +6,7 @@ import { existsSync, readFileSync, statSync } from 'fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { buildController } from './controller.js';
 
-class MiniServer {
+export class MiniServer {
     /**
      * @typedef {Object} MainServerOptions
      * @property {string} [root]
@@ -286,9 +286,3 @@ export class ApiController {
     }
 }
 
-const server = new MiniServer({
-    port: 4200,
-    staticFolder: 'public',
-    apiController: buildController(),
-});
-server.start();

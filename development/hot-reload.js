@@ -178,7 +178,7 @@ class HotReload {
 }
 
 const hotReload = new HotReload({
-    serverFilePath: '../server/server.js',
+    serverFilePath: '../main.js',
     htmlReloadPort: 8000,
 });
 hotReload.run();
