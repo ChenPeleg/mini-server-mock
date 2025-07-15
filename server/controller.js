@@ -17,7 +17,9 @@ export const buildController = () => {
     /**
      * @type {ApiController}
      */
-    const controller = new ApiController({
+    const controller = new ApiController(
+        {
+            routes: baseRoutes,
         /** @type {{ count: number }} */
         initialState: { count: 0 },
         /** @type {boolean} */ persistState: true,
