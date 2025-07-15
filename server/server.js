@@ -169,16 +169,18 @@ class MiniServer {
 /**
  * @typedef {Object} ApiControllerRoute
  * @property {string} route
+ * @property {'GET' | 'PSOT' | 'PUT' | 'PATCH' | 'DELETE'} [method]
  * @property {(req: import('http').IncomingMessage, res: import('http').ServerResponse) => void} routeAction
  */
 
 export class ApiController {
-    static stateSaveFileName = './server.state.temp';
+     #stateSaveFileName = './server.state.temp';
     /**
-     * @param {{initialState?: any, persistState?: boolean }} args
+     * @param {{initialState?: any, persistState?: boolean,stateSaveFile? : string  }} args
      */
-    constructor({ initialState, persistState } = {}) {
+    constructor({ initialState, persistState,stateSaveFile } = {}) {
         this.persistState = persistState || false;
+        this.#stateSaveFileName = stateSaveFile ||  this.#stateSaveFileName;
         /** @type {ApiControllerRoute[]} */
         this.routes = [];
         this.state = initialState || {};
@@ -227,7 +229,7 @@ export class ApiController {
     async tryToLoadState() {
         try {
             const state = await readFile(
-                ApiController.stateSaveFileName,
+                this.#stateSaveFileName,
                 'utf8'
             );
             this.state = JSON.parse(state);
@@ -253,7 +255,7 @@ export class ApiController {
         route.routeAction(request, response);
         if (this.persistState) {
             writeFile(
-                ApiController.stateSaveFileName,
+                this.#stateSaveFileName,
                 JSON.stringify(this.state, null, 2),
                 'utf8'
             ).then();
