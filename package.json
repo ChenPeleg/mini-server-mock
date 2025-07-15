@@ -4,7 +4,7 @@
   "main": "server/server.js",
   "type": "module",
   "scripts": {
-    "start": "node development/hot-reload.js",
+    "dev": "node development/hot-reload.js",
     "test": "test",
     "build": "tsc --project tsconfig.json"
   },
