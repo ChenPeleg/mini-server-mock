@@ -15,6 +15,7 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@types/node": "^24.0.13",
     "eslint": "^9.2.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",

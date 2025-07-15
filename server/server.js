@@ -3,7 +3,7 @@
 import http from 'http';
 import { extname, join as joinPath } from 'path';
 import { existsSync, readFileSync, statSync } from 'fs';
-import { writeFile, readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { buildController } from './controller.js';
 
 class MainServer {
@@ -123,8 +123,12 @@ class MainServer {
 export class ApiController {
     static stateSaveFileName = './server.state.temp';
 
+    /**
+     * @param {{initialState? :any , persistState?:any }}   args
+     */
     constructor({ initialState, persistState } = {}) {
         this.persistState = persistState || false;
+        /** @type {Array<{route: string, routeAction: function}>} */
         this.routes = [];
         this.state = initialState || {};
         if (this.persistState) {

@@ -1,3 +1,4 @@
+//@ts-check
 import { ApiController } from './server.js';
 
 export const buildController = () => {
