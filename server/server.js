@@ -4,7 +4,6 @@ import http from 'http';
 import { extname, join as joinPath } from 'path';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { readFile, writeFile } from 'node:fs/promises';
-import { buildController } from './controller.js';
 
 export class MiniServer {
     /**
@@ -12,13 +11,20 @@ export class MiniServer {
      * @property {string} [root]
      * @property {number} [port]
      * @property {string} [staticFolder]
+     * @property {boolean} [hasHotReload]
      * @property { ApiController} [apiController]
      */
 
     /**
      * @param {MainServerOptions} [options]
      */
-    constructor({ root, port, staticFolder, apiController } = {}) {
+    constructor({
+        root,
+        port,
+        staticFolder,
+        apiController,
+        hasHotReload,
+    } = {}) {
         this.staticFolder = staticFolder || 'public';
         this.root = root || process.cwd();
         this.port = port || 4200;
@@ -32,7 +38,7 @@ export class MiniServer {
     get htmlHotReloadWorker() {
         return `onconnect = (e) => {
     const port = e.ports[0];
-    const evtSource = new EventSource('http://localhost:8000');
+    const evtSource = new EventSource('http://localhost:35729');
     evtSource.addEventListener('message', (e) => {
         port.postMessage(e.data);
     });
@@ -45,17 +51,20 @@ export class MiniServer {
      * @returns {string}
      */
     get htmlHotReloadScript() {
-
         return `<script>
-        const myWorker = new SharedWorker("${this.hotRelaodfile}", {
-            name: 'reload-worker',
-        });
-        myWorker.port.start();
-        myWorker.port.onmessage = (e) => {
-            if (e.data === 'reload') {
-                window.location.reload();
-            }
-        };
+        try { 
+            const myWorker = new SharedWorker("${this.hotRelaodfile}", {
+                name: 'reload-worker',
+            });
+            myWorker.port.start();
+            myWorker.port.onmessage = (e) => {
+                if (e.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+         } catch (err) {
+            console.error('Hot reload worker failed to start:', err);
+         }
     </script>`;
     }
 
@@ -170,9 +179,10 @@ export class MiniServer {
         this.staticFileServer(request, response);
     }
 }
+
 /**
  * @typedef {'GET' | 'PSOT' | 'PUT' | 'PATCH' | 'DELETE'} RouteMethod
-*/
+ */
 
 /**
  * @typedef {Object} ApiControllerRoute
@@ -182,13 +192,14 @@ export class MiniServer {
  */
 
 export class ApiController {
-     #stateSaveFileName = './server.state.temp';
+    #stateSaveFileName = './server.state.temp';
+
     /**
      * @param {{initialState?: any, persistState?: boolean,stateSaveFile? : string  }} args
      */
-    constructor({ initialState, persistState,stateSaveFile } = {}) {
+    constructor({ initialState, persistState, stateSaveFile } = {}) {
         this.persistState = persistState || false;
-        this.#stateSaveFileName = stateSaveFile ||  this.#stateSaveFileName;
+        this.#stateSaveFileName = stateSaveFile || this.#stateSaveFileName;
         /** @type {ApiControllerRoute[]} */
         this.routes = [];
         this.state = initialState || {};
@@ -198,7 +209,7 @@ export class ApiController {
     }
 
     /**
-     * @param {Omit<ApiControllerRoute, "routeAction">} route
+     * @param {Omit<ApiControllerRoute, 'routeAction'>} route
      * @param {{ url: string; method?: string; }} request
      */
     static isRouteMatch(route, request) {
@@ -208,7 +219,11 @@ export class ApiController {
         if (pathParts.length !== requestParts.length) {
             return false;
         }
-        if (route.method && request.method && route.method.toUpperCase() !== request.method.toUpperCase()) {
+        if (
+            route.method &&
+            request.method &&
+            route.method.toUpperCase() !== request.method.toUpperCase()
+        ) {
             return false;
         }
         return pathParts.every((part, i) => {
@@ -240,10 +255,7 @@ export class ApiController {
 
     async tryToLoadState() {
         try {
-            const state = await readFile(
-                this.#stateSaveFileName,
-                'utf8'
-            );
+            const state = await readFile(this.#stateSaveFileName, 'utf8');
             this.state = JSON.parse(state);
         } catch (err) {
             console.log('state not loaded', err);
@@ -259,7 +271,13 @@ export class ApiController {
     use(request, response) {
         const url = typeof request.url === 'string' ? request.url : '';
         const route = this.routes.find((r) =>
-            ApiController.isRouteMatch({ url : r.url, method: r.method }, { url, method: request.method })
+            ApiController.isRouteMatch(
+                {
+                    url: r.url,
+                    method: r.method,
+                },
+                { url, method: request.method }
+            )
         );
         if (!route) {
             return { handled: false };
@@ -285,4 +303,3 @@ export class ApiController {
         return this;
     }
 }
-
