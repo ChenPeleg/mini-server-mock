@@ -89,16 +89,14 @@ class MainServer {
             response.end();
             return;
         }
-        const contentTypesByExtension = {
+        /** @type {Record<string, string>} */
+        const contentTypes = {
             '.html': 'text/html',
             '.css': 'text/css',
             '.js': 'text/javascript',
             '.json': 'text/json',
             '.svg': 'image/svg+xml',
         };
-        // Fix: add index signature to allow string indexing
-        /** @type {Record<string, string>} */
-        const contentTypes = contentTypesByExtension;
         if (!existsSync(filename)) {
             if (filename.includes('api')) {
                 response.writeHead(400, { 'Content-Type': 'text/plain' });
@@ -147,11 +145,9 @@ class MainServer {
         if (!this.apiConteoller) {
             return;
         }
-        // Defensive: ensure url is always a string for ApiController
         const url = typeof request.url === 'string' ? request.url : '';
-
-        //@ts-expect-error this is a cloned message
-        return this.apiConteoller.use({ ...request, url } , response);
+        // @ts-expect-error this is a cloned message
+        return this.apiConteoller.use({ ...request, url }, response);
     }
 
     /**
@@ -165,7 +161,6 @@ class MainServer {
         if (result && result.handled) {
             return;
         }
-        // Fix: pass original request object, not a spread, to staticFileServer
         this.staticFileServer(request, response);
     }
 }
@@ -241,7 +236,6 @@ export class ApiController {
         }
     }
 
-
     /**
      * Handles a request and delegates to the correct route.
      * @param {import('http').IncomingMessage} request
@@ -256,7 +250,6 @@ export class ApiController {
         if (!route) {
             return { handled: false };
         }
-        // Always call routeAction with the original IncomingMessage
         route.routeAction(request, response);
         if (this.persistState) {
             writeFile(

@@ -44,7 +44,6 @@ export const buildController = () => {
              * @returns {void}
              */
             routeAction: (req, res) => {
-                // Defensive: ensure req.url is a string
                 const url = typeof req.url === 'string' ? req.url : '';
                 /** @type {Record<string, string>} */
                 const vars = ApiController.getVariablesFromPath(
