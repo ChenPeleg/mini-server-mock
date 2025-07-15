@@ -55,6 +55,7 @@ class MainServer {
 
     start() {
         const server = http.createServer(this.serverMainHandler.bind(this));
+        // @ts-ignore
         server.listen(parseInt(this.port, 10));
         console.log(
             '\x1b[36m Server running at http://localhost:' +
@@ -63,6 +64,10 @@ class MainServer {
         );
     }
 
+    /**
+     * @param {{ url: string; }} request
+     * @param {{ writeHead: (arg0: number, arg1: { "Content-Type"?: string; }) => void; write: (arg0: string, arg1: string | undefined) => void; end: () => void; }} response
+     */
     staticFileServer(request, response) {
         const basePath = joinPath(this.root, this.staticFolder);
         let filename = joinPath(basePath, request.url);
@@ -101,8 +106,10 @@ class MainServer {
             }
 
             const headers = {};
+            // @ts-ignore
             const contentType = contentTypesByExtension[extname(filename)];
             if (contentType) {
+                // @ts-ignore
                 headers['Content-Type'] = contentType;
             }
             response.writeHead(200, headers);
@@ -116,6 +123,10 @@ class MainServer {
         }
     }
 
+    /**
+     * @param {any} request
+     * @param {any} response
+     */
     apiCallsServer(request, response) {
         if (!this.apiConteoller) {
             return;
@@ -123,6 +134,10 @@ class MainServer {
         return this.apiConteoller.use(request, response);
     }
 
+    /**
+     * @param {{ url: string; }} request
+     * @param {{ writeHead: (arg0: number, arg1: { "Content-Type"?: string; }) => void; write: (arg0: string, arg1: string | undefined) => void; end: () => void; }} response
+     */
     async serverMainHandler(request, response) {
         const result = await this.apiCallsServer(request, response);
         if (result && result.handled) {
@@ -196,6 +211,10 @@ export class ApiController {
         }
     }
 
+    /**
+     * @param {{ url: string; }} request
+     * @param {any} response
+     */
     use(request, response) {
         const route = this.routes.find((r) =>
             ApiController.isRouteMatch(r.route, request)
