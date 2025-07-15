@@ -20,12 +20,19 @@ class HotReload {
     }
 
     run() {
-        console.log(
-            `\x1b[33m 🚀 Hot reload watching files in "${this.rootPath}" \x1b[0m`
-        );
-        this.startServer();
-        this.startHtmlReloadServer();
-        this.watchFiles();
+        try {
+            console.log(
+                `\x1b[33m 🚀 Hot reload watching files in "${this.rootPath}" \x1b[0m`
+            );
+            this.startServer();
+            this.startHtmlReloadServer();
+            this.watchFiles();
+        } catch (error) {
+            console.error(
+                `\x1b[31m ❌ Error starting hot reload server: ${error.message} \x1b[0m`
+            );
+            process.exit(1);
+        }
     }
 
     startHtmlReloadServer() {
@@ -171,7 +178,7 @@ class HotReload {
 }
 
 const hotReload = new HotReload({
-    serverFilePath: 'server.js',
+    serverFilePath: '../server/server.js',
     htmlReloadPort: 8000,
 });
 hotReload.run();

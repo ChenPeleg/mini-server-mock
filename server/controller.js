@@ -18,7 +18,7 @@ export const buildController = () => {
     controller
         .addRoute({
             /** @type {string} */
-            route: '/api/first',
+            url: '/api/first',
             /**
              * Handles the /api/first route.
              * @param {import('http').IncomingMessage} req
@@ -36,7 +36,7 @@ export const buildController = () => {
         })
         .addRoute({
             /** @type {string} */
-            route: '/api/second/:id',
+            url: '/api/second/:id',
             /**
              * Handles the /api/second/:id route.
              * @param {import('http').IncomingMessage} req

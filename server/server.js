@@ -84,6 +84,10 @@ class MiniServer {
         const url = typeof request.url === 'string' ? request.url : '';
         const basePath = joinPath(this.root, this.staticFolder);
         let filename = joinPath(basePath, url);
+        if (filename.includes('.well-known')) {
+            response.end();
+            return;
+        }
         if (url.replace('/', '') === this.hotRelaodfile) {
             response.writeHead(200, { 'Content-Type': 'text/javascript' });
             response.write(this.htmlHotReloadWorker, 'binary');
@@ -105,6 +109,7 @@ class MiniServer {
                 response.end();
                 return;
             }
+            console.error(`File not found: ${filename}`);
             filename = joinPath(process.cwd(), '/404.html');
         } else if (statSync(filename).isDirectory()) {
             filename += '/index.html';
@@ -194,7 +199,7 @@ export class ApiController {
 
     /**
      * @param {Omit<ApiControllerRoute, "routeAction">} route
-     * @param {{ url: string; method: string; }} request
+     * @param {{ url: string; method?: string; }} request
      */
     static isRouteMatch(route, request) {
         const pathParts = route.url.split('/');
@@ -203,7 +208,7 @@ export class ApiController {
         if (pathParts.length !== requestParts.length) {
             return false;
         }
-        if (route.method && route.method !== request.method) {
+        if (route.method && request.method && route.method.toUpperCase() !== request.method.toUpperCase()) {
             return false;
         }
         return pathParts.every((part, i) => {
@@ -270,9 +275,13 @@ export class ApiController {
         return { handled: true };
     }
 
-    // @ts-ignore
-    addRoute({ route, routeAction }) {
-        this.routes.push({ route, routeAction });
+    /**\
+     *
+     * @param {ApiControllerRoute} route
+     * @return {ApiController}
+     */
+    addRoute(route) {
+        this.routes.push(route);
         return this;
     }
 }
