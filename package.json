@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node development/hot-reload.js",
-    "test": "test"
+    "test": "test",
+    "build": "tsc --project tsconfig.json"
   },
   "author": "",
   "license": "ISC",
