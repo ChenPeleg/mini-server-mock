@@ -149,7 +149,9 @@ class MainServer {
         }
         // Defensive: ensure url is always a string for ApiController
         const url = typeof request.url === 'string' ? request.url : '';
-        return this.apiConteoller.use({ ...request, url }, response);
+
+        //@ts-expect-error this is a cloned message
+        return this.apiConteoller.use({ ...request, url } , response);
     }
 
     /**
@@ -211,16 +213,17 @@ export class ApiController {
     /**
      * @param {string} path
      * @param {{ url: string; }} request
+     * @returns {Record<string, string>}
      */
     static getVariablesFromPath(path, request) {
         const requestWithoutQuery = request.url.split('?')[0];
         const pathParts = path.split('/');
         const requestParts = requestWithoutQuery.split('/');
+        /** @type {Record<string, string>} */
         const variables = {};
         pathParts.forEach((part, i) => {
             if (part.startsWith(':')) {
-                // @ts-ignore
-                variables[part.substring(1)] = requestParts[i];
+                variables[part.substring(1)] = requestParts[i] || '';
             }
         });
         return variables;
@@ -239,6 +242,12 @@ export class ApiController {
     }
 
 
+    /**
+     * Handles a request and delegates to the correct route.
+     * @param {import('http').IncomingMessage} request
+     * @param {import('http').ServerResponse} response
+     * @returns {{handled: boolean}}
+     */
     use(request, response) {
         const url = typeof request.url === 'string' ? request.url : '';
         const route = this.routes.find((r) =>
