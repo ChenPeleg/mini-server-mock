@@ -5,6 +5,10 @@ import { extname, join as joinPath } from 'path';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
+/**
+ * @template T
+ */
+
 export class MiniServer {
     /**
      * @typedef {Object} MainServerOptions
@@ -12,19 +16,19 @@ export class MiniServer {
      * @property {number} [port]
      * @property {string} [staticFolder]
      * @property {boolean} [devHotReload]
-     * @property { ApiController} [apiController]
+     * @property { ApiController <T>} [apiController]
      */
 
     /**
      * @param {MainServerOptions} [options]
      */
     constructor({
-                    root,
-                    port,
-                    staticFolder,
-                    apiController,
-                    devHotReload,
-                } = {}) {
+        root,
+        port,
+        staticFolder,
+        apiController,
+        devHotReload,
+    } = {}) {
         this.staticFolder = staticFolder || 'public';
         this.root = root || process.cwd();
         this.port = port || 4200;
@@ -79,8 +83,8 @@ export class MiniServer {
         server.listen(parseInt(this.port, 10));
         console.log(
             '\x1b[36m Server running at http://localhost:' +
-            this.port +
-            '\x1b[0m'
+                this.port +
+                '\x1b[0m'
         );
     }
 
@@ -129,7 +133,7 @@ export class MiniServer {
         if (!existsSync(filename)) {
             if (filename.includes('api')) {
                 response.writeHead(400, { 'Content-Type': 'text/plain' });
-                response.write('API call not found');
+                response.write(` call not found: ${filename}`);
                 response.end();
                 return;
             }
@@ -225,23 +229,30 @@ export class MiniServer {
  */
 
 /**
+ * @template T
  * @typedef {Object} ApiControllerRoute
  * @property {string} url
  * @property {RouteMethod} [method]
- * @property {(req: import('http').IncomingMessage, res: import('http').ServerResponse) => void} routeAction
+ * @property {{req: import('http').IncomingMessage, res:  import('http').ServerResponse , data?: T}} routeAction
  */
 
+/**
+ * @template T
+*/
 export class ApiController {
     #stateSaveFileName = './server.state.temp';
 
     /**
-     * @param {{routes? :ApiControllerRoute[]  , initialState?: any, persistState?: boolean,stateSaveFile? : string  }} args
+
+     * @param {{routes? :ApiControllerRoute<T>[]  , initialState?: T, persistState?: boolean,stateSaveFile? : string  }} args
      */
     constructor({ routes, initialState, persistState, stateSaveFile } = {}) {
         this.persistState = persistState || false;
         this.#stateSaveFileName = stateSaveFile || this.#stateSaveFileName;
-        /** @type {ApiControllerRoute[]} */
+        /** @type {ApiControllerRoute<T>[]} */
         this.routes = routes || [];
+
+        /** @type { any} */
         this.state = initialState || {};
         if (this.persistState) {
             this.tryToLoadState().then();
@@ -249,16 +260,21 @@ export class ApiController {
     }
 
     /**
-     * @param {Omit<ApiControllerRoute, 'routeAction'>} route
+     * @param {Omit<ApiControllerRoute<any>, 'routeAction'>} route
      * @param {{ url: string; method?: string; }} request
      */
     static isRouteMatch(route, request) {
-        const pathParts = route.url.split('/');
-        const requestParts = request.url.split('/');
+        const pathParts = route.url
+            .split('/')
+            .filter((p /** @type string */) => p);
+        const requestParts = request.url
+            .split('/')
+            .filter((p /** @type string */) => p);
 
         if (pathParts.length !== requestParts.length) {
             return false;
         }
+
         if (
             route.method &&
             request.method &&
@@ -299,13 +315,14 @@ export class ApiController {
      * @param method
      * @param data
      * @param status
-     * @return {ApiControllerRoute}
+     * @return {ApiControllerRoute<any>}
      */
     static createRoute({ url, method, data, status }) {
         return {
             url,
             method: method || 'GET',
-            routeAction: (req, res) => {
+            //@ts-expect-error this is a cloned message
+             routeAction: async (req, res, data) => {
                 res.writeHead(status || 200, {
                     'Content-Type': 'application/json',
                 });
@@ -320,7 +337,7 @@ export class ApiController {
             const state = await readFile(this.#stateSaveFileName, 'utf8');
             this.state = JSON.parse(state);
         } catch (err) {
-            console.log('state not loaded', err);
+            console.error('state not loaded', err);
         }
     }
 
@@ -328,9 +345,9 @@ export class ApiController {
      * Handles a request and delegates to the correct route.
      * @param {import('http').IncomingMessage} request
      * @param {import('http').ServerResponse} response
-     * @returns {{handled: boolean}}
+     * @returns Promise {{handled: boolean}}
      */
-    use(request, response) {
+    async use(request, response) {
         const url = typeof request.url === 'string' ? request.url : '';
         const route = this.routes.find((r) =>
             ApiController.isRouteMatch(
@@ -344,7 +361,8 @@ export class ApiController {
         if (!route) {
             return { handled: false };
         }
-        route.routeAction(request, response);
+        // @ts-expect-error this is a cloned message
+        route.routeAction(request, response, this.state);
         if (this.persistState) {
             writeFile(
                 this.#stateSaveFileName,
@@ -357,8 +375,8 @@ export class ApiController {
 
     /**\
      *
-     * @param {ApiControllerRoute} route
-     * @return {ApiController}
+     * @param {ApiControllerRoute<any>} route
+     * @return {ApiController<T>}
      */
     addRoute(route) {
         this.routes.push(route);
