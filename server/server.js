@@ -19,12 +19,12 @@ export class MiniServer {
      * @param {MainServerOptions} [options]
      */
     constructor({
-        root,
-        port,
-        staticFolder,
-        apiController,
-        devHotReload,
-    } = {}) {
+                    root,
+                    port,
+                    staticFolder,
+                    apiController,
+                    devHotReload,
+                } = {}) {
         this.staticFolder = staticFolder || 'public';
         this.root = root || process.cwd();
         this.port = port || 4200;
@@ -79,8 +79,8 @@ export class MiniServer {
         server.listen(parseInt(this.port, 10));
         console.log(
             '\x1b[36m Server running at http://localhost:' +
-                this.port +
-                '\x1b[0m'
+            this.port +
+            '\x1b[0m'
         );
     }
 
@@ -91,6 +91,20 @@ export class MiniServer {
      * @returns {void}
      */
     staticFileServer(request, response) {
+        response.setHeader('Access-Control-Allow-Origin', '*');
+        response.setHeader(
+            'Access-Control-Allow-Methods',
+            'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+        );
+        response.setHeader(
+            'Access-Control-Allow-Headers',
+            'Content-Type, Authorization'
+        );
+        if (request.method === 'OPTIONS') {
+            response.writeHead(204);
+            response.end();
+            return;
+        }
         const url = typeof request.url === 'string' ? request.url : '';
         const basePath = joinPath(this.root, this.staticFolder);
         let filename = joinPath(basePath, url);
@@ -125,12 +139,12 @@ export class MiniServer {
                 response.write('Not found');
                 response.end();
                 return;
-
-
             } else {
-                filename = joinPath(process.cwd(), `${this.staticFolder}/404.html`);
+                filename = joinPath(
+                    process.cwd(),
+                    `${this.staticFolder}/404.html`
+                );
             }
-
         } else if (statSync(filename).isDirectory()) {
             filename += '/index.html';
         }
@@ -168,6 +182,21 @@ export class MiniServer {
      * @returns {any}
      */
     apiCallsServer(request, response) {
+        // Set CORS headers
+        response.setHeader('Access-Control-Allow-Origin', '*');
+        response.setHeader(
+            'Access-Control-Allow-Methods',
+            'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+        );
+        response.setHeader(
+            'Access-Control-Allow-Headers',
+            'Content-Type, Authorization'
+        );
+        if (request.method === 'OPTIONS') {
+            response.writeHead(204);
+            response.end();
+            return { handled: true };
+        }
         if (!this.apiConteoller) {
             return;
         }
